@@ -1,0 +1,320 @@
+<form theme="dark">
+  <label>Login Activity</label>
+  <description>This dashboards contains all kind of interesting login acitivity searches, helping you to identify suspicious behavior.</description>
+  <search id="Azure_logons" ref="Azure logons"></search>
+  <search id="Failed_logons" ref="Failed logons"></search>
+  <fieldset submitButton="false">
+    <input type="time" token="field1" searchWhenChanged="true">
+      <label>Select Timeperiod:</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Successfull logins - Unique Users</title>
+      <single>
+        <search>
+          <query>`ual` eventtype="user_logins"  | spath input=AuditData 
+| eval User = coalesce(UserId, UserIds) 
+|search Workload=AzureActiveDirectory User!=Unknown 
+| rename ExtendedProperties{}.* as *  
+| eval ExtendedProperties=mvzip(Name,Value, "=") 
+| mvexpand ExtendedProperties 
+| eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1) 
+|stats dc(User) as "Unique Accounts"</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <link target="_blank">search?q=%60ual%60%20eventtype=%22user_logins%22%20%20%7C%20spath%20input=AuditData%20%0A%7C%20eval%20User%20=%20coalesce(UserId,%20UserIds)%20%20%0A%7Csearch%20Workload=AzureActiveDirectory%20User!=Unknown%0A%7C%20rename%20ExtendedProperties%7B%7D.*%20as%20*%20%20%0A%7C%20eval%20ExtendedProperties=mvzip(Name,Value,%20%22=%22)%20%7C%20mvexpand%20ExtendedProperties%20%0A%7C%20eval%20Key=mvindex(split(ExtendedProperties,%22=%22),0),%20Value=mvindex(split(ExtendedProperties,%22=%22),1)%20%0A%7Cstats%20count%20by%20User%20%7Csort%20-%20count&amp;earliest=$field1.earliest$&amp;latest=$field1.latest$</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Successfull logins - Unique Source IP addresses</title>
+        <search>
+          <query>`ual` eventtype="user_logins"  | spath input=AuditData 
+| eval User = coalesce(UserId, UserIds) 
+| search Workload=AzureActiveDirectory User!=Unknown 
+| rename ExtendedProperties{}.* as *  
+| eval ExtendedProperties=mvzip(Name,Value, "=") 
+| mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1) 
+| rename ExtendedProperties{}.* as *  
+| eval ExtendedProperties=mvzip(Name,Value, "=") 
+| mvexpand ExtendedProperties 
+| eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1)
+|stats dc(ClientIP)</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <link target="_blank">search?q=%60ual%60%20eventtype=%22user_logins%22%20%20%7C%20spath%20input=AuditData%20%0A%7Ceval%20User%20=%20coalesce(UserId,%20UserIds)%20%0A%7C%20search%20Workload=AzureActiveDirectory%20%0AUser!=Unknown%0A%7C%20rename%20ExtendedProperties%7B%7D.*%20as%20*%20%20%0A%7C%20eval%20ExtendedProperties=mvzip(Name,Value,%20%22=%22)%20%7C%20mvexpand%20ExtendedProperties%20%0A%7C%20eval%20Key=mvindex(split(ExtendedProperties,%22=%22),0),%20Value=mvindex(split(ExtendedProperties,%22=%22),1)%20%0A%7Cstats%20count%20by%20ClientIP%20%7Csort%20-%20count&amp;earliest=$field1.earliest$&amp;latest=$field1.latest$</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Successful logins per country</title>
+      <map>
+        <search>
+          <query>`ual` eventtype="user_logins"  | spath input=AuditData | eval User = coalesce(UserId, UserIds) |search Workload=AzureActiveDirectory User!=Unknown | rename ExtendedProperties{}.* as *  | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1)  | iplocation ClientIP | search LogonError!=UserAccountNotFound |geostats count by Country</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="mapping.choroplethLayer.colorBins">3</option>
+        <option name="mapping.choroplethLayer.colorMode">auto</option>
+        <option name="mapping.choroplethLayer.maximumColor">0xaf575a</option>
+        <option name="mapping.choroplethLayer.minimumColor">0x62b3b2</option>
+        <option name="mapping.choroplethLayer.neutralPoint">0</option>
+        <option name="mapping.choroplethLayer.shapeOpacity">0.75</option>
+        <option name="mapping.choroplethLayer.showBorder">1</option>
+        <option name="mapping.data.maxClusters">100</option>
+        <option name="mapping.legend.placement">bottomright</option>
+        <option name="mapping.map.center">(0,0)</option>
+        <option name="mapping.map.panning">1</option>
+        <option name="mapping.map.scrollZoom">0</option>
+        <option name="mapping.map.zoom">2</option>
+        <option name="mapping.markerLayer.markerMaxSize">50</option>
+        <option name="mapping.markerLayer.markerMinSize">20</option>
+        <option name="mapping.markerLayer.markerOpacity">0.9</option>
+        <option name="mapping.showTiles">1</option>
+        <option name="mapping.tileLayer.maxZoom">7</option>
+        <option name="mapping.tileLayer.minZoom">0</option>
+        <option name="mapping.tileLayer.tileOpacity">1</option>
+        <option name="mapping.type">marker</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=%60ual%60%20eventtype=%22user_logins%22%20%20latest=now()%7C%20spath%20input=AuditData%20%7C%20search%20Workload=AzureActiveDirectory%20UserId!=Unknown%20%7C%20rename%20ExtendedProperties%7B%7D.*%20as%20*%20%20%7C%20eval%20ExtendedProperties=mvzip(Name,Value,%20%22=%22)%20%7C%20mvexpand%20ExtendedProperties%20%7C%20eval%20Key=mvindex(split(ExtendedProperties,%22=%22),0),%20Value=mvindex(split(ExtendedProperties,%22=%22),1)%20%7C%20rename%20ExtendedProperties%7B%7D.*%20as%20*%20%20%7C%20eval%20ExtendedProperties=mvzip(Name,Value,%20%22=%22)%20%7C%20mvexpand%20ExtendedProperties%20%7C%20eval%20Key=mvindex(split(ExtendedProperties,%22=%22),0),%20Value=mvindex(split(ExtendedProperties,%22=%22),1)%20%7C%20%20iplocation%20ClientIP%20%7C%20geostats%20count%20by%20Country&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </map>
+    </panel>
+    <panel>
+      <title>Bruteforce attempts by Country of origin</title>
+      <map>
+        <search>
+          <query>`ual` eventtype="failed_logins"  
+| spath input=AuditData 
+| search Workload=AzureActiveDirectory LogonError=IdsLocked
+| rename ExtendedProperties{}.* as * 
+| eval ExtendedProperties=mvzip(Name,Value, "=")
+| mvexpand ExtendedProperties
+| eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1) 
+|iplocation ClientIP
+| geostats count by Country</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="mapping.choroplethLayer.colorBins">5</option>
+        <option name="mapping.choroplethLayer.colorMode">auto</option>
+        <option name="mapping.choroplethLayer.maximumColor">0xaf575a</option>
+        <option name="mapping.choroplethLayer.minimumColor">0x62b3b2</option>
+        <option name="mapping.choroplethLayer.neutralPoint">0</option>
+        <option name="mapping.choroplethLayer.shapeOpacity">0.75</option>
+        <option name="mapping.choroplethLayer.showBorder">1</option>
+        <option name="mapping.data.maxClusters">100</option>
+        <option name="mapping.legend.placement">bottomright</option>
+        <option name="mapping.map.center">(0,0)</option>
+        <option name="mapping.map.panning">1</option>
+        <option name="mapping.map.scrollZoom">0</option>
+        <option name="mapping.map.zoom">2</option>
+        <option name="mapping.markerLayer.markerMaxSize">50</option>
+        <option name="mapping.markerLayer.markerMinSize">10</option>
+        <option name="mapping.markerLayer.markerOpacity">0.8</option>
+        <option name="mapping.showTiles">1</option>
+        <option name="mapping.tileLayer.maxZoom">7</option>
+        <option name="mapping.tileLayer.minZoom">0</option>
+        <option name="mapping.tileLayer.tileOpacity">1</option>
+        <option name="mapping.type">marker</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">search?q=%60ual%60%20eventtype=%22failed_logins%22%20latest=now()%20%20%7C%20spath%20input=AuditData%20%7C%20search%20Workload=AzureActiveDirectory%20AND%20LogonError=IdsLocked%7C%20rename%20ExtendedProperties%7B%7D.*%20as%20*%20%20%7C%20eval%20ExtendedProperties=mvzip(Name,Value,%20%22=%22)%20%7C%20mvexpand%20ExtendedProperties%20%7C%20eval%20Key=mvindex(split(ExtendedProperties,%22=%22),0),%20Value=mvindex(split(ExtendedProperties,%22=%22),1)%20%7Ciplocation%20ClientIP%20%7C%20geostats%20count%20by%20Country&amp;earliest=$earliest$&amp;latest=$latest$</link>
+        </drilldown>
+      </map>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Multi Factor Disabled</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="disable_mfa" | spath input=AuditData |eval SourceAccount = coalesce(UserId, UserIds)  |rename ObjectId as TargetAccount|table CreationTime,Operations,SourceAccount,TargetAccount</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Failed logins because of MFA errors</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="failed_logins"  | spath input=AuditData | search Workload=AzureActiveDirectory LogonError=UserStrong* |eval User = coalesce(UserId, UserIds) |stats count by User,ClientIP,LogonError |where count &gt;2 |sort - count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Non-Existent Accounts - Login Attempts</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="failed_logins"  |spath input=AuditData |search LogonError=UserAccountNotFound | eval User = coalesce(UserId, UserIds)|stats values(User) AS User by ClientIP, LogonError
+| rename LogonError AS "Logon Error"</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Failed login attempts from multiple IP-Addresses</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="failed_logins"  | spath input=AuditData | search Workload=AzureActiveDirectory | eval User = coalesce(UserId, UserIds)
+|stats dc(ClientIP) as UniqueIP values(ClientIP) as SourceIP by User |where UniqueIP &gt; 1 |sort - UniqueIP</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Unique_IPs">
+          <colorPalette type="list">[#53A051,#F1813F,#DC4E41]</colorPalette>
+          <scale type="threshold">2,5</scale>
+        </format>
+        <format type="color" field="UniqueIP">
+          <colorPalette type="list">[#53A051,#F1813F,#DC4E41]</colorPalette>
+          <scale type="threshold">2,4</scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Successfull logins from multiple unique IP addresses</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="user_logins"   | spath input=AuditData | eval User = coalesce(UserId, UserIds)
+| search Workload=AzureActiveDirectory User!=Unknown |stats dc(ClientIP) as UniqueIP values(ClientIP) as SourceIP by User  |where UniqueIP &gt; 1|sort - UniqueIP</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="UniqueIP">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">3,6</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Rare User-Agents attempting to authenticate</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="user_logins"  | spath input=AuditData | eval User = coalesce(UserId, UserIds)
+| search Workload=AzureActiveDirectory User!=Unknown| rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1)| search Key=UserAgent |rare limit=10 Value |dedup Value|rename Value as UserAgent|fields - percent</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="count">
+          <colorPalette type="list">[#DC4E41,#F1813F,#F8BE34,#006D9C]</colorPalette>
+          <scale type="threshold">1,3,7</scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Password Resets</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="password_reset"  | spath input=AuditData | eval SourceAccount = coalesce(UserId, UserIds)
+ |rename ObjectId as TargetAccount |table _time,SourceAccount,TargetAccount</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

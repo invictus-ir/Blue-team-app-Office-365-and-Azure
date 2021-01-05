@@ -1,0 +1,167 @@
+<form theme="dark">
+  <label>Permission changes</label>
+  <description>Attackers often change permissions to gain additional foothold into an environment or to escalate privileges</description>
+  <fieldset submitButton="false">
+    <input type="time" token="field1" searchWhenChanged="true">
+      <label>Select Timeperiod:</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Security Alerts on Privilege Escalation</title>
+      <single>
+        <search>
+          <query>`ual` eventtype=security_privilege_escalation | spath input=AuditData | spath input=Data|search Name="Elevation of Exchange admin privilege" AND f3u!=BOXServiceAccount@eurprd04.prod.outlook.com|rename f3u as SourceAccount| stats count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,2,3]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Mailbox permission changes</title>
+      <html>
+            <p>Use the Add-MailboxPermission cmdlet to add permissions to a mailbox.</p>
+            <p>For more information check out https://docs.microsoft.com/en-us/powershell/module/exchange/mailboxes/add-mailboxpermission?view=exchange-ps </p>
+      </html>
+      <table>
+        <search>
+          <query>`ual` eventtype=mailbox_permission | spath input=AuditData | rename Parameters{}.* as * | eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1)  | search UserType=2  Key=AccessRights | rename ClientIP as "SourceIP"  |eval SourceAccount = coalesce(UserId, UserIds)| rename Value as Permission | rename ObjectId as TargetAccount  | table CreationTime,Operation,SourceIP,SourceAccount,TargetAccount,Permission</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Modify or Set ' SendAs' permissions</title>
+      <html>
+            <p>SendAs permission allows a user or group members to send messages that appear to come from the specified mailbox, mail contact, mail user, or group.</p>
+            <p> For more information check out https://docs.microsoft.com/en-us/powershell/module/exchange/mailboxes/add-recipientpermission?view=exchange-ps </p>
+      </html>
+      <table>
+        <search>
+          <query>`ual` eventtype="recipient_permission"  | spath input=AuditData  |rename Parameters{}.* as *| eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1)  |search Key=AccessRights AND UserType=2|rename ClientIP as "SourceIP"  |eval SourceAccount = coalesce(UserId, UserIds)|rename ObjectId as TargetAccount|rename Value as Permission |table CreationTime,Operation,SourceIP,SourceAccount,TargetAccount,Permission</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+            <p>Creation or modification of Mailbox folder this can be used to gain access to someone else's mailbox and its folders.</p>
+            <p> For more information check out https://docs.microsoft.com/en-us/powershell/module/exchange/mailboxes/add-mailboxfolderpermission?view=exchange-ps </p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Change mailbox folder permissions</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="mailboxfolder_permission"  |spath input=AuditData  |rename Parameters{}.* as *| eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1)  |search Key=AccessRights AND UserType=2|rename ClientIP as "SourceIP"  |eval SourceAccount = coalesce(UserId, UserIds)|rename ObjectId as TargetAccount|rename Value as Permission|table CreationTime,Operation,SourceIP,SourceAccount,TargetAccount,Permission</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Users added to a role</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=role_changes| spath input=AuditData | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1) |rename ModifiedProperties{}.* as * |eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) |search ModifiedKey=Role.DisplayName |eval SourceAccount = coalesce(UserId, UserIds)|stats  values(SourceAccount) as SourceAccount values(ObjectId) as TargetAccount values(ModifiedValue) as NewRole by CreationTime,Operation,Id</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="NewRole">
+          <colorPalette type="expression">if (like(value,"%Administrator"),"#FF3105","#247bc1")</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Users added to a group</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=group_changes |spath input=AuditData | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1)|rename ModifiedProperties{}.* as * |eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1)  |search ModifiedKey=Group.DisplayName|eval SourceAccount = coalesce(UserId, UserIds)|stats values(SourceAccount) as SourceAccount values(ObjectId) as TargetAccount values(ModifiedValue) as NewGroup by CreationTime,Operation,Id</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

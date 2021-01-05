@@ -1,0 +1,216 @@
+<form theme="dark">
+  <label>Email Forwarding Rules</label>
+  <fieldset submitButton="false">
+    <input type="time" token="field1" searchWhenChanged="true">
+      <label>Select Timeperiod:</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <p> <b>Regular</b> users can setup or modify email forwarding rules in different ways detection can be done using the following operations:</p>
+        <ul>
+          <li>
+            <b>New-InboxRule</b>
+          </li> 
+          <li>
+            <b>Set-InboxRule</b>
+          </li>
+        </ul>
+           
+        
+         <p> <b>Administrative</b> users or users with certain privileges can create or modify mail flow rules, these rules can be set for more than one mailbox and are harder to detect, however it is possible with the Unified Audit Log (UAL). Look for the following operations:</p>
+        <ul>
+          <li>
+            <b>New-TransportRule</b>
+          </li> 
+          <li>
+            <b>Set-TransportRule</b>
+          </li>
+        </ul>
+            <p>
+          <i>For more information on New-TransportRule see: https://docs.microsoft.com/en-us/powershell/module/exchange/policy-and-compliance/new-transportrule?view=exchange-ps</i>
+        </p>
+            <p>
+          <i>For more information on Set-TransportRule see:https://docs.microsoft.com/en-us/powershell/module/exchange/policy-and-compliance/set-transportrule?view=exchange-ps</i>
+        </p>
+         <p>
+          <i>For more information on New-InboxRule see: https://docs.microsoft.com/en-us/powershell/module/exchange/mailboxes/new-inboxrule?view=exchange-ps</i>
+        </p>
+        <p>
+          <i>For more information on Set-InboxRule see: https://docs.microsoft.com/en-us/powershell/module/exchange/mailboxes/set-inboxrule?view=exchange-ps</i>
+        </p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Number of forwarding rules in this dataset</title>
+      <single>
+        <search>
+          <query>`ual` eventtype="email_rules" |stats count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,5,10]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <link target="_blank">search?q=%60ual%60%20eventtype=%22email_rules%22%20%20%7C%20spath%20input=AuditData&amp;earliest=0&amp;latest=</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Overview of Forwarding rules</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="email_rules"  | spath input=AuditData | rename Parameters{}.* as * | eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) | search (Key=Name OR Key=Identity) | eval tempip=split(ClientIP,":") | eval ip=mvindex(tempip,0) | eval port=mvindex(tempip,1) | eval SourceAccount = coalesce(UserId, UserIds)| rename ip as "SourceIP" |rename Key as Action |rename Value as RuleName |rename Id as MailRuleId|table CreationTime,Operation,MailRuleId,RuleName,SourceAccount,SourceIP</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <drilldown>
+          <link target="_blank">/app/Blue_Team_App_O365_Azure/forwarding_rule_investigator?form.MailRuleId=$row.MailRuleId$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <p> Another option is to modify an existing mailbox configuration mailbox and add or modify certain parameters to forward messages tis is possible for the <b>Set-Mailbox </b> operation with the following parameters:</p>
+        <ul>
+          <li>
+            <b>ForwardingSmtpAddress</b>
+          </li>
+          <li>
+            <b>DeliverToMailboxAndForward</b>
+          </li>
+          <li>
+            <b>ForwardingAddress</b>
+          </li>
+        </ul>
+        <p>
+          Take a look at the <b>MailRuleId</b> field to identify actions that occured on the same rule <br/>
+          <i>For more information on Set-Mailbox see: https://docs.microsoft.com/en-us/powershell/module/exchange/mailboxes/set-mailbox?view=exchange-ps</i>
+        </p>
+        </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Number of suspicious modified rules</title>
+        <search>
+          <query>`ual` eventtype="modified_rules"  |spath input=AuditData |rename Parameters{}.* as * |eval Parameters=mvzip(Name,Value, "=") |mvexpand Parameters |eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) |search Key=ForwardingSmtpAddress OR Key=DeliverToMailboxAndForward OR Key=ForwardingAddress |stats dc(Id)</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0xdc4e41"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <link target="_blank">search?q=%60ual%60%20eventtype=%22modified_rules%22%20%20%7Cspath%20input=AuditData&amp;earliest=0&amp;latest=</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Overview of modified rules</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="modified_rules"  |spath input=AuditData |rename Parameters{}.* as * |eval Parameters=mvzip(Name,Value, "=") |mvexpand Parameters |eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) |search Key=ForwardingSmtpAddress OR Key=DeliverToMailboxAndForward OR Key=ForwardingAddress |eval SourceAccount = coalesce(UserId, UserIds)|rename ClientIP as "SourceIP"|rename ObjectId as TargetAccount|rename Id as MailRuleId|table CreationTime,Operation,MailRuleId,"SourceAccount","SourceIP",TargetAccount,Key,Value |sort - CreationTime</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Value">
+          <colorPalette type="expression">if (like(value,"smtp%"),"#FF3105","42ff42")</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Overview of disabled &amp; removed mail rules</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=removed_disabled_rules |spath input=AuditData |rename Id as MailRuleId |eval SourceAccount = coalesce(UserId, UserIds)|stats values(ObjectId) as DisabledRuleName values(SourceAccount) as SourceAcccount by CreationTime,MailRuleId,Operation</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Security &amp; Compliance Center alerts on Email Forwarding</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=security_alert_rules |spath input=AuditData |search Name="Creation of forwarding/redirect rule" |table CreationTime,Name,AlertEntityId,Category,Severity,Operation,Data |sort - CreationTime |dedup CreationTime|sort - CreationTime</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

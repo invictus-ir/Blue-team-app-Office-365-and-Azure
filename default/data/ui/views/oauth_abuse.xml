@@ -1,0 +1,92 @@
+<form theme="dark">
+  <label>OAuth2 Abuse (BETA)</label>
+  <description>This dashboard provides an overview of events related to OAuth2 abuse. In this type of attack, a victim authorizes a third-party application to access their Microsoft account. Once authorized, the application can access the user's data without the need for credentials, it also   circumvents 2 factor authentication</description>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <html>To get access on behalf of a user through the usage of a (malicious) app the following steps need to be taken:
+            More info see: https://docs.microsoft.com/en-us/graph/auth-v2-user
+        <ul>
+          <li>
+            <b>1. Register your app with Azure AD. (see panel 1 for application registration)</b>
+          </li> 
+          <li>
+            <b>2. Get authorization.(see panel 2 and panel 3 for permissions and consent given to applications)</b>
+          </li>
+          <li>
+            <b>3. Get an access token.(see panel 4 for OAuth2 permissions that were granted)</b>
+          </li> 
+          <li>
+            <b>4. Call Microsoft Graph with the access token. (see panel 4 for events related to permissions granted by the Microsoft Graph API) </b>
+          </li>
+           <li>
+            <b>5. Use a refresh token to get a new access token. (currently not visible in the audit log)</b>
+          </li>
+        </ul>
+        If we want to detect threat actors leveraging malicious applications to attack users, we must try to find suspicious activity in any of the above steps. Based on our experience with these types of attacks your best chance to detect attacks is to focus on the first four steps as traces can be found in the Unified Audit Log.
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Applications that were added to Azure</title>
+      <input type="time" token="field1">
+        <label>Select Timerange:</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <table>
+        <search>
+          <query>`ual` eventtype=new_application |spath input=AuditData | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1) |search ExtendedKey=targetName | rename ModifiedProperties{}.* as *  | eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) |eval SourceAccount = coalesce(UserId, UserIds) |stats values(SourceAccount) as SourceAccount values(ExtendedValue) as Application by CreationTime,Operation</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Permissions assigned to application by users</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=application_consent | spath input=AuditData  | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1)|search ExtendedKey=targetName |rename ModifiedProperties{}.* as * |eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) |search ModifiedKey=ConsentAction.Permissions |eval SourceAccount = coalesce(UserId, UserIds) |stats  values(SourceAccount) as User values(ExtendedValue) as "Application" values(ModifiedProperties) as "Application Permissions" by CreationTime,Operation,</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>An app role was assigned to a user in Azure AD.</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=app_role_assignment  | spath input=AuditData | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1) |search ExtendedKey=targetName |rename ModifiedProperties{}.* as * |eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) |eval SourceAccount = coalesce(UserId, UserIds) |stats values(ExtendedValue) as "Suspicious application" values(SourceAccount) as "Rights assigned to:"  by CreationTime,Operation</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Add 0Auth2PermissionGrant</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=app_permission_oauth  | spath input=AuditData  | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1)  | rename ModifiedProperties{}.* as * | search ExtendedKey=resultType | eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1)  | eval PermissionsAssignedTo = coalesce(UserId, UserIds) |stats values(ExtendedValue) as PermissionGranted by CreationTime,Operation,PermissionsAssignedTo</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</form>
