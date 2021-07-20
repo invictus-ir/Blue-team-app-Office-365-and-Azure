@@ -39,8 +39,8 @@
       </single>
     </panel>
     <panel>
+      <title>Successfull logins - Unique Source IP addresses</title>
       <single>
-        <title>Successfull logins - Unique Source IP addresses</title>
         <search>
           <query>`ual` eventtype="user_logins"  | spath input=AuditData 
 | eval User = coalesce(UserId, UserIds) 
@@ -72,7 +72,7 @@
       <title>Successful logins per country</title>
       <map>
         <search>
-          <query>`ual` eventtype="user_logins"  | spath input=AuditData | eval User = coalesce(UserId, UserIds) |search Workload=AzureActiveDirectory User!=Unknown | rename ExtendedProperties{}.* as *  | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1)  | iplocation ClientIP | search LogonError!=UserAccountNotFound |geostats count by Country</query>
+          <query>`ual` eventtype="user_logins"  | spath input=AuditData | eval User = coalesce(UserId, UserIds) |search Workload=AzureActiveDirectory User!=Unknown | rename ExtendedProperties{}.* as *  | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1)  | iplocation ClientIP |geostats count by Country</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>

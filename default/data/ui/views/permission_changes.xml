@@ -121,6 +121,19 @@
   </row>
   <row>
     <panel>
+      <title>New user created</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="new_user"|spath input=AuditData| spath input=AuditData  |rename ModifiedProperties{}.* as * |eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) |eval SourceAccount = coalesce(UserId, UserIds)|stats  values(SourceAccount) as SourceAccount values(ObjectId) as TargetAccount  by CreationTime,Operation,Id</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">cell</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
       <title>Users added to a role</title>
       <table>
         <search>

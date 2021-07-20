@@ -7,6 +7,7 @@
   <collection label="Investigator toolkit">
     <view name="account_investigator_ai" />
     <view name="forwarding_rule_investigator" />
+    <view name="data_accessed_investigator"/>
   </collection>
   
   <view name="search" default='true' />
