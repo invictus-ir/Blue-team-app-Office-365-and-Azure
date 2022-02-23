@@ -12,50 +12,29 @@
     <row>
       <panel>
         <html>
-          <p> Users can setup or modify Flow rules within the O365 Power Automate functionality.  This overview mainly tracks the following Power Automate Flow operations:</p>
+          <p> Users can setup or modify Flow rules within the O365 Power Automate functionality. These rules allow an attacker to create persistent triggers/flows which, for example, allow them to exfiltrate O365 data. This dashboard tracks Power Automate Flow log entries with the following "Operation" syntax:</p>
           <ul>
             <li>
-              <b>CancelFlowRun</b>
+              <b>*Flow (e.g. CreateFlow)</b>
+            </li> 
+            <li>
+              <b>*FlowRun (e.g. CancelFlowRun)</b>
+            </li> 
+            <li>
+              <b>*FlowOwners (e.g. ModifyFlowOwners)</b>
+            </li> 
+            <li>
+              <b>ModifyRunOnlyUsers</b>
             </li> 
             <li>
               <b>CreateConnection</b>
-            </li>
-            <li>
-              <b>CreateFlow</b>
-            </li>
-            <li>
-              <b>DeleteFlow</b>
-            </li>
-            <li>
-              <b>GetApi</b>
-            </li>
-            <li>
-              <b>GetFlow</b>
-            </li>
-            <li>
-              <b>AdminGetFlow</b>
-            </li>
+            </li> 
             <li>
               <b>ListCallbackUrl</b>
-            </li>
+            </li> 
             <li>
-              <b>ListApis</b>
-            </li>
-            <li>
-              <b>ListFlowOwners</b>
-            </li>
-            <li>
-              <b>ModifyFlowOwners</b>
-            </li>
-            <li>
-              <b>AdminModifyFlowOwners</b>
-            </li>
-            <li>
-              <b>ModifyRunOnlyUsers</b>
-            </li>
-            <li>
-              <b>UpdateFlow</b>
-            </li>
+              <b>GetApi</b>
+            </li> 
           </ul>
              
           <p> 
