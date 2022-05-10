@@ -4,6 +4,7 @@
   <view name="login_activity" />
   <view name="oauth_abuse" />
   <view name="other_suspicious_activity" />
+  <view name="flow_rules"/>
   <collection label="Investigator toolkit">
     <view name="account_investigator_ai" />
     <view name="forwarding_rule_investigator" />

@@ -1,0 +1,86 @@
+<form theme="dark" version="1.1">
+    <label>Power Automate Flow Rules</label>
+    <fieldset submitButton="false">
+      <input type="time" token="field1" searchWhenChanged="true">
+        <label>Select Timeperiod:</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+    </fieldset>
+    <row>
+      <panel>
+        <html>
+          <p> Users can setup or modify Flow rules within the O365 Power Automate functionality. These rules allow an attacker to create persistent triggers/flows which, for example, allow them to exfiltrate O365 data. This dashboard tracks Power Automate Flow log entries with the following "Operation" syntax:</p>
+          <ul>
+            <li>
+              <b>*Flow (e.g. CreateFlow)</b>
+            </li> 
+            <li>
+              <b>*FlowRun (e.g. CancelFlowRun)</b>
+            </li> 
+            <li>
+              <b>*FlowOwners (e.g. ModifyFlowOwners)</b>
+            </li> 
+            <li>
+              <b>ModifyRunOnlyUsers</b>
+            </li> 
+            <li>
+              <b>CreateConnection</b>
+            </li> 
+            <li>
+              <b>ListCallbackUrl</b>
+            </li> 
+            <li>
+              <b>GetApi</b>
+            </li> 
+          </ul>
+             
+          <p> 
+            <i>Please note that only Cloud Flows actions are logged within the Microsoft Compliance Center, and Desktop Flows logs need to be gathered seperately. For more information see:https://docs.microsoft.com/en-us/power-platform/admin/logging-power-automate</i>
+          </p>
+          <p>
+            <i>For more information on Flow Management see:https://docs.microsoft.com/en-us/connectors/flowmanagement/</i>
+          </p>
+           <p>
+            <i>For more information regarding Power Automate loggin: https://docs.microsoft.com/en-us/power-platform/admin/logging-power-automate</i>
+          </p>
+        </html>
+      </panel>
+    </row>
+    <row>
+      <panel>
+        <title>Number of Flow rules in this dataset</title>
+        <single>
+          <search>
+            <query>`ual` eventtype="flow_rules" |stats count</query>
+            <earliest>$field1.earliest$</earliest>
+            <latest>$field1.latest$</latest>
+            <sampleRatio>1</sampleRatio>
+          </search>
+          <option name="colorBy">value</option>
+          <option name="colorMode">block</option>
+          <option name="drilldown">all</option>
+          <option name="numberPrecision">0</option>
+          <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+          <option name="rangeValues">[0,5,10]</option>
+          <option name="refresh.display">progressbar</option>
+          <option name="showSparkline">1</option>
+          <option name="showTrendIndicator">1</option>
+          <option name="trellis.enabled">0</option>
+          <option name="trellis.scales.shared">1</option>
+          <option name="trellis.size">medium</option>
+          <option name="trendColorInterpretation">standard</option>
+          <option name="trendDisplayMode">absolute</option>
+          <option name="unitPosition">after</option>
+          <option name="useColors">1</option>
+          <option name="useThousandSeparators">1</option>
+          <drilldown>
+            <link target="_blank">search?q=%60ual%60%20eventtype=%22flow_rules%22%20%20%7C%20spath%20input=AuditData&amp;earliest=0&amp;latest=</link>
+          </drilldown>
+        </single>
+      </panel>
+    </row>
+  </form>
+  
