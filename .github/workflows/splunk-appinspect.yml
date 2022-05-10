@@ -1,2 +1,0 @@
-- name: Splunk AppInspect
-  uses: splunk/appinspect-cli-action@v1.4.7-publish
