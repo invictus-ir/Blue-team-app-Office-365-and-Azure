@@ -1,0 +1,15 @@
+<nav search_view="search" color="2D2D2D">
+  <view name="email_forwarding" />
+  <view name="permission_changes" />
+  <view name="login_activity" />
+  <view name="oauth2_abuse" />
+  <view name="power_automate_flows"/>
+  <view name="other_suspicious_activity" />
+  <collection label="Investigator toolkit">
+    <view name="mail_rule_investigator_mri" />
+    <view name="account_investigator_ai" />
+    <view name="data_accessed_investigator"/>
+  </collection>
+  
+  <view name="search" default='true' />
+</nav>

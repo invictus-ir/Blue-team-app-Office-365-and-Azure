@@ -1,0 +1,113 @@
+<form theme="dark" version="1.1">
+  <label>Data Accessed Investigator</label>
+  <description>This dashboard can help you determine what data was accessed by the threat actor. The first section of this dashboard is based on emails accessed which is captured in the UAL by the "MailItemsAccessed" Operation. This operation is part of the advanced audit functionality in Office365, which is enabled by default for users that are assigned an Office 365 or Microsoft 365 E5 license or for organizations with a Microsoft 365 E5 Compliance add-on subscription. Using the InternetMessageId/MessageID you can determine emails accessed. To do this in your own/client environment, you can use PowerShell with the cmdlets Get-MessageTrace or Start-HistoricalSearch with InternetMessageId as a parameter. Or use Graph Explorer to connect with the Messages API.</description>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="dropdown" token="UserName" searchWhenChanged="true">
+      <label>Select User:</label>
+      <fieldForLabel>User</fieldForLabel>
+      <fieldForValue>User</fieldForValue>
+      <search>
+        <query>`ual` eventtype=mailitemsaccessed| spath input=AuditData |eval User = coalesce(UserId, UserIds)
+ |stats count by User</query>
+      </search>
+      <choice value="*">All Users</choice>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="AppId" searchWhenChanged="true">
+      <label>Select Application</label>
+      <fieldForLabel>ClientAppId</fieldForLabel>
+      <fieldForValue>ClientAppId</fieldForValue>
+      <search>
+        <query>`ual` eventtype=mailitemsaccessed | spath input=AuditData  |stats count by ClientAppId</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+      <choice value="*">All Apps</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="time" token="field1" searchWhenChanged="true">
+      <label>Select Timeperiod:</label>
+      <default>
+        <earliest>-30d@d</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Bind emails accessed</title>
+      <html>
+            <p>A bind operation is an individual access to an email message. For bind access, the InternetMessageId of individual messages will be recorded in the audit record.</p>
+            <p>For more information check out https://docs.microsoft.com/en-us/microsoft-365/compliance/mailitemsaccessed-forensics-investigations?view=o365-worldwide#auditing-bind-access </p>
+      </html>
+      <table>
+        <search>
+          <query>`ual` eventtype=mailitemsaccessed | spath input=AuditData |eval User = coalesce(UserId, UserIds)| search "OperationProperties{}.Value"=Bind   User=$UserName$ ClientAppId=$AppId$|stats  values(MailboxOwnerUPN) as Owner values(OperationCount) as "Operation Count" values(Folders{}.Path) as "Folder Path" values(ClientIPAddress) as SourceIPAddress  by CreationTime,ClientAppId,Folders{}.FolderItems{}.InternetMessageId |rename Folders{}.FolderItems{}.InternetMessageId as InternetMessageId |sort - CreationTime</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Sync emails accessed</title>
+      <html>
+            <p>Sync operations are only recorded when a mailbox is accessed by a desktop version of the Outlook client for Windows or Mac.</p>
+            <p>For more information check out https://docs.microsoft.com/en-us/microsoft-365/compliance/mailitemsaccessed-forensics-investigations?view=o365-worldwide#auditing-sync-access </p>
+      </html>
+      <table>
+        <search>
+          <query>`ual` eventtype=mailitemsaccessed | spath input=AuditData |eval User = coalesce(UserId, UserIds)| search "OperationProperties{}.Value"=Sync User=$UserName$ |stats values(ClientIP) as SourceIP values(ClientInfoString) as ClientInfoString values(ClientProcessName) as ClientProcess by CreationTime,MailboxOwnerUPN, Item.ParentFolder.Name |sort - CreationTime</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>File Activity in SharePoint/OneDrive</title>
+      <html>
+            <p>Information below is related to file activity, use the input panels at the top of this page to filter results on User. </p>
+            <p>The 'Operation' field shows the type of file activity recorded</p>
+           
+      </html>
+      <table>
+        <search>
+          <query>`ual` eventtype="file_activity" |spath input=AuditData | eval User = coalesce(UserId, UserIds) |search User=$UserName$ |stats values(User) as User values(ClientIP) as ClientIP values(SourceFileName) as "File Name" values(SourceRelativeUrl) as "File Path" by CreationTime,Operation |sort - CreationTime</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

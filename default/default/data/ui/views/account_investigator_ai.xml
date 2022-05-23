@@ -1,0 +1,200 @@
+<form theme="dark" version="1.1">
+  <label>Account Investigator (AI)</label>
+  <description>This dashboard can help you dive into the detailed activities of an account.</description>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="dropdown" token="UserName" searchWhenChanged="true">
+      <label>Select User:</label>
+      <fieldForLabel>User</fieldForLabel>
+      <fieldForValue>User</fieldForValue>
+      <search>
+        <query>`ual` eventtype=user_logins
+| spath input=AuditData 
+|eval User = coalesce(UserId, UserIds)
+|search Workload=AzureActiveDirectory User!=Unknown |stats count by User</query>
+      </search>
+      <choice value="*">All Users</choice>
+    </input>
+    <input type="time" token="field1">
+      <label>Select Timeperiod:</label>
+      <default>
+        <earliest>-30d@d</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="text" token="text">
+      <label>Filter output:</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <viz type="timeline_app.timeline">
+        <title>Operations by $UserName$</title>
+        <search>
+          <query>`ual` |eval User = coalesce(UserId, UserIds) |search User=$UserName$|spath input=AuditData |table _time,Operation</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="timeline_app.timeline.axisTimeFormat">DAYS</option>
+        <option name="timeline_app.timeline.colorMode">categorical</option>
+        <option name="timeline_app.timeline.maxColor">#DA5C5C</option>
+        <option name="timeline_app.timeline.minColor">#FFE8E8</option>
+        <option name="timeline_app.timeline.numOfBins">6</option>
+        <option name="timeline_app.timeline.tooltipTimeFormat">SECONDS</option>
+        <option name="timeline_app.timeline.useColors">0</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Logins by UserAgent</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="user_logins" |eval User = coalesce(UserId, UserIds) |search User=$UserName$ $text$| spath input=AuditData | search Workload=AzureActiveDirectory  |  rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1) | eval tempip=split(ClientIP,":") | eval ip=mvindex(tempip,0) | eval port=mvindex(tempip,1) | rename "User" as "SourceAccount" | rename ip as "SourceIP"|search Key=UserAgent |stats count by Value |sort + count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="count">
+          <colorPalette type="list">[#DC4E41,#F8BE34,#53A051]</colorPalette>
+          <scale type="threshold">5,10</scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Logins by IP-Address</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="user_logins" |eval User = coalesce(UserId, UserIds) |search User=$UserName$ $text$ | spath input=AuditData| search Workload=AzureActiveDirectory User!=Unknown| rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1) | eval tempip=split(ClientIP,":") | eval ip=mvindex(tempip,0) | eval port=mvindex(tempip,1) | rename "User" as "SourceAccount" | rename ip as "SourceIP"|search Key=UserAgent |stats count by SourceIP |sort + count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="count">
+          <colorPalette type="list">[#DC4E41,#F8BE34,#53A051]</colorPalette>
+          <scale type="threshold">5,10</scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Logins originating from</title>
+      <map>
+        <search>
+          <query>`ual` eventtype="user_logins" |eval User = coalesce(UserId, UserIds) |search User=$UserName$  $text$| spath input=AuditData|search Workload=AzureActiveDirectory User!=Unknown| rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval Key=mvindex(split(ExtendedProperties,"="),0), Value=mvindex(split(ExtendedProperties,"="),1) | eval tempip=split(ClientIP,":") | eval ip=mvindex(tempip,0) | eval port=mvindex(tempip,1) | rename "User" as "SourceAccount" | rename ip as "SourceIP"|search Key=UserAgent |iplocation SourceIP|geostats count by Country</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="mapping.choroplethLayer.colorBins">5</option>
+        <option name="mapping.choroplethLayer.colorMode">auto</option>
+        <option name="mapping.choroplethLayer.maximumColor">0xaf575a</option>
+        <option name="mapping.choroplethLayer.minimumColor">0x62b3b2</option>
+        <option name="mapping.choroplethLayer.neutralPoint">0</option>
+        <option name="mapping.choroplethLayer.shapeOpacity">0.75</option>
+        <option name="mapping.choroplethLayer.showBorder">1</option>
+        <option name="mapping.data.maxClusters">100</option>
+        <option name="mapping.legend.placement">bottomright</option>
+        <option name="mapping.map.center">(0,0)</option>
+        <option name="mapping.map.panning">1</option>
+        <option name="mapping.map.scrollZoom">0</option>
+        <option name="mapping.map.zoom">2</option>
+        <option name="mapping.markerLayer.markerMaxSize">50</option>
+        <option name="mapping.markerLayer.markerMinSize">10</option>
+        <option name="mapping.markerLayer.markerOpacity">0.8</option>
+        <option name="mapping.showTiles">1</option>
+        <option name="mapping.tileLayer.maxZoom">7</option>
+        <option name="mapping.tileLayer.minZoom">0</option>
+        <option name="mapping.tileLayer.tileOpacity">1</option>
+        <option name="mapping.type">marker</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </map>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Login activity over time for $UserName$</title>
+      <chart>
+        <search>
+          <query>`ual` eventtype="user_logins"  |eval User = coalesce(UserId, UserIds) |search User=$UserName$  $text$|timechart count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>20 most recent events for $UserName$</title>
+      <table>
+        <search>
+          <query>`ual` |eval User = coalesce(UserId, UserIds) |search User=$UserName$ |spath input=AuditData |head 20|table CreationTime,Operation,User,AuditData |rename User as UserName</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

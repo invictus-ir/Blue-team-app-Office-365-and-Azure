@@ -1,0 +1,137 @@
+<form theme="dark" version="1.1">
+  <label>Other suspicious activity</label>
+  <fieldset submitButton="false">
+    <input type="time" token="field1" searchWhenChanged="true">
+      <label>Select Timeperiod:</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Audit Log Disabled by User</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=disabling_auditlog | spath input=AuditData 
+| search "Parameters{}.Name"=UnifiedAuditLogIngestionEnabled
+| eval tempip=split(ClientIP,":") 
+| eval ip=mvindex(tempip,0) 
+| eval port=mvindex(tempip,1) 
+|eval SourceAccount = coalesce(UserId, UserIds) 
+| rename ip as "SourceIP"
+|table CreationTime,Operation,ObjectId,SourceAccount,SourceIP</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Sharing items with individuals outside of an organization</title>
+      <html>
+        <h4>  
+      Modify this search to exclude items that are part of your organization, you can do this by replacing "YOUR DOMAIN HERE" in the search below. 
+    </h4>
+      </html>
+      <table>
+        <search>
+          <query>`ual` eventtype="item_sharing" |spath input=AuditData
+|search TargetUserOrGroupName!="YOUR DOMAIN HERE" 
+|eval User = coalesce(UserId, UserIds)
+| stats count by _time,Operation, User, ObjectId, TargetUserOrGroupName</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Mailbox item deleted by a user other than a mailbox owner</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="delete_items"  |spath input=AuditData 
+|eval User = coalesce(UserId, UserIds) 
+|where MailboxOwnerUPN!=User
+| table _time, Operation,MailboxOwnerUPN,AffectedItems{}.ParentFolder.Path, AffectedItems{}.Subject,User</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>eDiscovery Security Alerts</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="security_privilege_escalation" | spath input=AuditData |spath input=Data |search Name="eDiscovery search started or exported"| rename f3u as SourceAccount |table CreationTime,Name,SourceAccount,Severity</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>eDiscovery activities</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="ediscovery_actions"  | spath input=AuditData 
+| search Workload=SecurityComplianceCenter 
+|eval SourceAccount = coalesce(UserId, UserIds) 
+|rename Query as SearchQuery
+| table CreationTime,Operation,SourceAccount,SearchQuery,SharepointLocations</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

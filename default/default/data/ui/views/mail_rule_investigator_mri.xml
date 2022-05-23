@@ -1,0 +1,67 @@
+<form theme="dark" version="1.1">
+  <label>Mail Rule Investigator (MRI)</label>
+  <fieldset submitButton="false">
+    <input type="text" token="MailRuleId" searchWhenChanged="true">
+      <label>Enter the Mail Rule ID</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Email rule forward addresses</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="email_rules" | spath input=AuditData | rename Parameters{}.* as * | eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) | eval tempip=split(ClientIP,":") | eval ip=mvindex(tempip,0) | eval port=mvindex(tempip,1) | eval CreatedBy = coalesce(UserId, UserIds) | rename ip as "SourceIP" | rename Id as MailRuleId |search MailRuleId=$MailRuleId$ AND (Key=BlindCopyTo OR Key=SentTo OR Key=ForwardTo)  |table CreationTime,MailRuleId,CreatedBy,Key,Value</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Value">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Detailed parameters of rule</title>
+        <search>
+          <query>`ual` eventtype="email_rules" | spath input=AuditData | rename Parameters{}.* as * | eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) | eval tempip=split(ClientIP,":") | eval ip=mvindex(tempip,0) | eval port=mvindex(tempip,1) | eval CreatedBy = coalesce(UserId, UserIds)  | rename ip as "SourceIP" | rename Id as MailRuleId |search MailRuleId=$MailRuleId$   |table CreationTime,MailRuleId,CreatedBy,Key,Value</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Key">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Raw events for this Mail Rule</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="email_rules" | spath input=AuditData | rename Parameters{}.* as * | eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) | eval tempip=split(ClientIP,":") | eval ip=mvindex(tempip,0) | eval port=mvindex(tempip,1) | eval SourceAccount = coalesce(UserId, UserIds) | rename ip as "SourceIP" |rename Key as Action |rename Value as RuleName |rename Id as MailRuleId|search MailRuleId=$MailRuleId$ |table _raw |rename _raw as Event</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">/app/simple_xml_examples/simple_form_text?form.limit=$click.value2$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>
