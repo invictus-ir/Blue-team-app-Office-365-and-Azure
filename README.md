@@ -1,7 +1,3 @@
-<h3>If you want to support us</h3>
-
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/invictusir)
-
 <h2>Blue-team-app-Office-365-and-Azure</h2>
 The Blue team app for Office 365 and Azure is developed to help you investigate the Microsoft 365 Audit log. This app contains well over 20 unique searches that will help you identify suspicious activity in your Office 365 and Azure environment.
 
