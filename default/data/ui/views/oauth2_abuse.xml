@@ -1,0 +1,94 @@
+<form theme="dark" version="1.1">
+  <label>OAuth2 Abuse</label>
+  <description>This dashboard provides an overview of events related to OAuth2 abuse. In this type of attack, a victim authorizes a third-party application to access their Microsoft account. Once authorized, the application can access the user's data without the need for credentials, it can also circumvent  2factor authentication.</description>
+  <fieldset submitButton="false">
+    <input type="time" token="field3" searchWhenChanged="true">
+      <label>Select timerange:</label>
+      <default>
+        <earliest>0</earliest>
+        <latest></latest>
+      </default>
+    </input>
+    <input type="text" token="ClientAppId" searchWhenChanged="true">
+      <label>Search for AppId</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Applications added to Azure</title>
+      <html>
+            <p>If you don't see an app registration event when searching for an Application ID (AppId), but you see other events related to the AppId, it means the application was not registered in the environment that you are analyzing or the registration event was outside the log retention period.</p>
+            <p>Be sure to check out the Azure Portal, click on 'Azure Active Directory' -- 'App registrations' </p>
+      </html>
+      <table>
+        <search>
+          <query>`ual` eventtype=new_application $ClientAppId$ | spath input=AuditData | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1)  | rename ModifiedProperties{}.* as *  | eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) | eval SourceAccount = coalesce(UserId, UserIds) |stats values(ModifiedProperties) as AppDetails by CreationTime,SourceAccount|sort - CreationTime</query>
+          <earliest>$field3.earliest$</earliest>
+          <latest>$field3.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Permissions assigned to application by users</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=application_consent $ClientAppId$| spath input=AuditData  | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1) |rename ModifiedProperties{}.* as * |eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) |search ModifiedKey=ConsentAction.Permissions |eval SourceAccount = coalesce(UserId, UserIds) |stats  values(SourceAccount) as User values(ModifiedProperties) as "Application Permissions" by CreationTime,Operation,ObjectId|rename ObjectId as AppId | sort - CreationTime</query>
+          <earliest>$field3.earliest$</earliest>
+          <latest>$field3.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Application Permissions">
+          <colorPalette type="map">{"ConsenType":#DC4E41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>An app role was assigned to a user in Azure AD.</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=app_role_assignment $ClientAppId$ | spath input=AuditData | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1)  |rename ModifiedProperties{}.* as * |eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1) |eval SourceAccount = coalesce(UserId, UserIds) |stats values(ObjectId) as "AppId" values(SourceAccount) as "Rights assigned to:" by CreationTime,Operation |sort - CreationTime</query>
+          <earliest>$field3.earliest$</earliest>
+          <latest>$field3.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Add 0Auth2PermissionGrant</title>
+      <table>
+        <search>
+          <query>`ual` eventtype=app_permission_oauth $ClientAppId$| spath input=AuditData  | rename ExtendedProperties{}.* as * | eval ExtendedProperties=mvzip(Name,Value, "=") | mvexpand ExtendedProperties | eval ExtendedKey=mvindex(split(ExtendedProperties,"="),0), ExtendedValue=mvindex(split(ExtendedProperties,"="),1)  | rename ModifiedProperties{}.* as * | search ExtendedKey=resultType | eval ModifiedProperties=mvzip(Name,NewValue,"=") | mvexpand ModifiedProperties | eval ModifiedKey=mvindex(split(ModifiedProperties,"="),0), ModifiedValue=mvindex(split(ModifiedProperties,"="),1)  | eval PermissionsAssignedTo = coalesce(UserId, UserIds) |stats values(ExtendedValue) as PermissionGranted by CreationTime,Operation,PermissionsAssignedTo |sort - CreationTime</query>
+          <earliest>$field3.earliest$</earliest>
+          <latest>$field3.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Operations by application</title>
+        <search>
+          <query>`ual` $ClientAppId$ |eval Operation = coalesce(Operation, Operations)  |stats count by Operation |sort - count</query>
+          <earliest>$field3.earliest$</earliest>
+          <latest>$field3.latest$</latest>
+        </search>
+        <option name="drilldown">cell</option>
+      </table>
+    </panel>
+  </row>
+</form>

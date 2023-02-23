@@ -1,0 +1,52 @@
+<form theme="dark" version="1.1">
+  <label>Mail Rule Investigator (MRI) - Other</label>
+  <description>Use this dashboard to investigate rules that are not created through M365</description>
+  <fieldset submitButton="false">
+    <input type="text" token="MailRuleId" searchWhenChanged="true">
+      <label>Enter the Mail Rule ID</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Email rule detailed properties</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="email_rules_client" | spath input=AuditData| rename OperationProperties{}.* as * | eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) |rename Id as MailRuleId |search MailRuleId=$MailRuleId$   |table CreationTime,MailRuleId,CreatedBy,Key,Value</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Value">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Raw events for this Mail Rule</title>
+      <table>
+        <search>
+          <query>`ual` eventtype="email_rules_client" | spath input=AuditData | rename OperationProperties{}.* as * | eval Parameters=mvzip(Name,Value, "=") | mvexpand Parameters | eval Key=mvindex(split(Parameters,"="),0), Value=mvindex(split(Parameters,"="),1) |rename Id as MailRuleId|search MailRuleId=$MailRuleId$ |dedup _raw |table _raw |rename _raw as Event</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">/app/simple_xml_examples/simple_form_text?form.limit=$click.value2$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>

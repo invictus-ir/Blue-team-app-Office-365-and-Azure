@@ -1,4 +1,4 @@
-<form theme="dark">
+<form theme="dark" version="1.1">
   <label>Data Accessed Investigator</label>
   <description>This dashboard can help you determine what data was accessed by the threat actor. The first section of this dashboard is based on emails accessed which is captured in the UAL by the "MailItemsAccessed" Operation. This operation is part of the advanced audit functionality in Office365, which is enabled by default for users that are assigned an Office 365 or Microsoft 365 E5 license or for organizations with a Microsoft 365 E5 Compliance add-on subscription. Using the InternetMessageId/MessageID you can determine emails accessed. To do this in your own/client environment, you can use PowerShell with the cmdlets Get-MessageTrace or Start-HistoricalSearch with InternetMessageId as a parameter. Or use Graph Explorer to connect with the Messages API.</description>
   <fieldset submitButton="true" autoRun="false">
