@@ -5,9 +5,9 @@ Requirements:
 This app relies on the data collected in the Unified Audit Log.
 
 There are several ways to export this data out of an environment:
-1. Exporting the data using the Office 365 Extractor (https://github.com/PwC-IR/Office-365-Extractor)
+1. Exporting the data using the Micrososft Extractor Suite (https://github.com/invictus-ir/Microsoft-Extractor-Suite)
 2. Getting the data from the API which can be achieved with the Splunk Add-on for Microsoft Office 365 
-3. Export the data using the Office 365 Security and Compliance web portal
+3. Export the data using the Microsoft 365 Purview/Compliance portal. 
 
 Dependencies:
 The custom timeline app is used for one visualisation and can be found here:
